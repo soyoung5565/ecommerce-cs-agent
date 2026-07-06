@@ -18,9 +18,14 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, Security, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, APIKeyHeader
-from jose import JWTError, jwt
-
 from app.core.config import settings
+
+# Lazy import jose (not available in all environments)
+try:
+    from jose import JWTError, jwt
+except ImportError:
+    jwt = None
+    JWTError = Exception
 
 logger = logging.getLogger(__name__)
 
