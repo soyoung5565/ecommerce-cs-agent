@@ -75,9 +75,24 @@ async def route_intent(llm, content: str, ctx: ConversationContext) -> dict:
     ]
 
     try:
-        response = await llm.chat(messages, temperature=0.1, max_tokens=200)
-        # 解析LLM返回的JSON
-        result = json.loads(response.content.strip().strip("```json").strip("```"))
+        response = await llm.chat(messages, temperature=0.1, max_tokens=1024)
+        raw = response.content.strip()
+        # 尝试从LLM回复中提取JSON（可能被```json包裹或混杂文字）
+        json_str = raw
+        if "```json" in raw:
+            json_str = raw.split("```json")[1].split("```")[0].strip()
+        elif "```" in raw:
+            json_str = raw.split("```")[1].split("```")[0].strip()
+        # 尝试找第一个{到最后一个}
+        if not json_str.startswith("{"):
+            start = json_str.find("{")
+            end = json_str.rfind("}")
+            if start >= 0 and end > start:
+                json_str = json_str[start:end+1]
+        result = json.loads(json_str)
+        # 确保有必要字段
+        if "intent" not in result:
+            result = _rule_based_route(content)
         logger.info(f"L0路由: {content[:30]} → {result}")
         return result
     except Exception as e:

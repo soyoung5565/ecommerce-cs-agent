@@ -56,6 +56,14 @@ class MIMOProvider(LLMProvider):
             choice = data["choices"][0]
             message = choice["message"]
 
+            # MIMO推理模型: 回复可能在reasoning_content中，content可能为空
+            content = message.get("content", "") or ""
+            reasoning = message.get("reasoning_content", "")
+            if not content and reasoning:
+                # 如果content为空但有reasoning，用reasoning的最后部分作为回复
+                # 通常推理模型的结论在reasoning末尾
+                content = reasoning
+
             tool_calls = None
             if message.get("tool_calls"):
                 tool_calls = [
@@ -71,7 +79,7 @@ class MIMOProvider(LLMProvider):
                 ]
 
             return LLMResponse(
-                content=message.get("content", "") or "",
+                content=content,
                 tool_calls=tool_calls,
                 usage=data.get("usage"),
                 model=data.get("model", self.config.model),
