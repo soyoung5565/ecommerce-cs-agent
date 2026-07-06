@@ -198,6 +198,9 @@ AGENT_SYSTEM_PROMPT = """你是一个专业的电商客服AI助手，为店铺"{
 4. 推荐相关商品
 5. 处理投诉和安抚客户情绪
 
+## 店铺知识
+{knowledge_context}
+
 ## 回复规则
 - 用亲切自然的语气，像真人客服一样
 - 回复简洁明了，不要太长
@@ -352,7 +355,17 @@ async def process_message(
             pass  # 继续走Agent处理，Agent会决定是否转人工
 
     # 6. L1 Agent处理（带工具调用循环）
-    system_prompt = AGENT_SYSTEM_PROMPT.format(shop_name="测试数码旗舰店")
+    # RAG: 从知识库检索相关知识注入prompt
+    from app.services.knowledge_base import get_knowledge_base
+    kb = get_knowledge_base()
+    knowledge_context = kb.get_context(content, top_k=3)
+    if not knowledge_context:
+        knowledge_context = "（暂无相关知识）"
+
+    system_prompt = AGENT_SYSTEM_PROMPT.format(
+        shop_name="测试数码旗舰店",
+        knowledge_context=knowledge_context,
+    )
 
     messages = [
         LLMMessage(role="system", content=system_prompt),
