@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     # 应用
     APP_NAME: str = "ecommerce-cs-agent"
     APP_VERSION: str = "0.1.0"
-    DEBUG: bool = True
+    DEBUG: bool = False
     HOST: str = "0.0.0.0"
     PORT: int = 8000
 

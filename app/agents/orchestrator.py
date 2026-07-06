@@ -19,7 +19,8 @@ from dataclasses import dataclass, field
 
 from app.services.llm import get_llm_provider, LLMMessage, LLMTool, LLMResponse
 from app.services.risk_engine import assess_refund_risk, RefundContext, Decision
-from app.security.guard import detect_prompt_injection, filter_response, message_limiter
+from app.security.guardrails import check_input_safety, filter_output, check_tool_permission
+from app.security.audit import audit_log
 
 logger = logging.getLogger(__name__)
 
@@ -319,13 +320,24 @@ async def process_message(
     3. L1 Agent处理（LLM + 工具调用循环）
     4. L2输出过滤
     """
-    # 1. Prompt注入检测
-    is_injection, pattern = detect_prompt_injection(content)
-    if is_injection:
-        logger.warning(f"拦截注入攻击: buyer={buyer_id} pattern={pattern}")
+    # 1. 多层输入安全检查（正则+LLM语义分析）
+    is_safe, reason = await check_input_safety(content)
+    if not is_safe:
+        logger.warning(f"拦截不安全输入: buyer={buyer_id} reason={reason}")
+        audit_log(
+            action="input_blocked",
+            actor=f"buyer:{buyer_id}",
+            target_type="message",
+            platform=platform,
+            shop_id=shop_id,
+            details={"reason": reason, "content_preview": content[:50]},
+            risk_level="high",
+            result="blocked",
+        )
         return "抱歉，我无法处理这个请求。请问还有其他可以帮到您的吗？"
 
-    # 2. 速率限制
+    # 2. 速率限制（使用Redis或内存）
+    from app.security.guard import message_limiter
     if not message_limiter.check(buyer_id):
         return "您的消息发送太频繁了，请稍后再试。"
 
@@ -410,7 +422,7 @@ async def process_message(
         reply = "抱歉，处理时间较长，请稍后重试或联系人工客服。"
 
     # 7. L2输出过滤
-    reply = filter_response(reply)
+    reply = filter_output(reply)
 
     logger.info(f"回复: [{platform}] {buyer_id} ← {reply[:50]}")
     return reply
