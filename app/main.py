@@ -66,11 +66,13 @@ from app.api.health import router as health_router
 from app.api.webhooks import router as webhook_router
 from app.api.tools import router as tools_router
 from app.api.risk import router as risk_router
+from app.api.chat import router as chat_router
 
 app.include_router(health_router, tags=["健康检查"])
 app.include_router(webhook_router, prefix="/webhook", tags=["平台Webhook"])
 app.include_router(tools_router, prefix="/api/tools", tags=["Agent工具"])
 app.include_router(risk_router, prefix="/api/risk", tags=["风控评估"])
+app.include_router(chat_router, prefix="/api", tags=["对话测试"])
 
 
 @app.get("/")
