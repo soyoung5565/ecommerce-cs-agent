@@ -1,6 +1,11 @@
 """MIMO Provider — 小米MIMO大模型
 
 API兼容OpenAI格式，base_url: token-plan-cn.xiaomimimo.com/v1
+
+(2026-07-09 改造为通用 minimax/OpenAI-compatible Provider)
+实际上现在作为 minimax (MiniMax-M3) 的 Provider 使用 — MiniMax 同样走 OpenAI 兼容协议
+(/v1/chat/completions) 且原生支持 reasoning_content 字段，与 MiMo 行为一致。
+base_url 通过 LLMConfig 传入，保留名字以兼容现有调用方与配置。
 """
 
 import logging
@@ -14,12 +19,18 @@ logger = logging.getLogger(__name__)
 
 
 class MIMOProvider(LLMProvider):
-    """小米MIMO大模型Provider"""
+    """通用 OpenAI 兼容 Provider (兼容 MiMo / minimax / DeepSeek 等)
+
+    历史上专门给 MiMo 用 (MIMOProvider)，但行为其实和 OpenAI 兼容协议无差异 —
+    都能正确处理 reasoning_content 字段。2026-07-09 切到 minimax 后保留类名以
+    避免破坏调用方代码。
+    """
 
     def __init__(self, config: LLMConfig):
         super().__init__(config)
         if not config.base_url:
-            self.config.base_url = "https://token-plan-cn.xiaomimimo.com/v1"
+            # 历史默认，保留兜底
+            self.config.base_url = "https://api.minimaxi.com/v1"
         self._base_url = self.config.base_url.rstrip("/")
 
     async def chat(
