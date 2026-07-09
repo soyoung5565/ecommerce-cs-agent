@@ -72,6 +72,7 @@
 | 2026-07-06 | 23e70e5 | init: 项目初始化 |
 | 2026-07-06 | cabb810 | feat: Phase 1 核心框架（配置+消息+模型+FastAPI+Webhook+工具API+决策引擎+Agent编排）|
 | 2026-07-06 | 0451814 | feat: 平台适配器+安全层+知识库同步（42测试全通过）|
+| 2026-07-09 | 99d8d1c | chore: 切到 minimax (MiniMax-M3) 套餐 (.env本地配置+ mimo_provider.py 改造) |
 
 ---
 
